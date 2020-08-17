@@ -20,6 +20,8 @@ $ make build
 $ ./result/bin/bot-poc
 ```
 
+> put your bot token in the **BOT_TOKEN** environment variable
+
 #### Code Reload
 ```sh
 $ make dev
