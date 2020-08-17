@@ -8,12 +8,21 @@ A small Telegram bot project made in Haskell
 
 ### Features implemented:
 
-⭐ Welcome message to new chat members (Need a better message)
+⭐ Welcome message for new chat members (Need a better message)
 
 ⭐ `/lastweekly` command to get the link of the last haskell weekly
 
-### Running
+### Scripts
 
-Todo
+#### Build
+```sh
+$ make build
+$ ./result/bin/bot-poc
+```
 
+#### Code Reload
+```sh
+$ make dev
+```
 
+by jeovazero
