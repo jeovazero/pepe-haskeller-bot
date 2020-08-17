@@ -14,15 +14,18 @@ A small Telegram bot project made in Haskell
 
 ### Scripts
 
+Requirements:
+- Nix
+- put your bot token in the **BOT_TOKEN** environment variable
+
 #### Build
 ```sh
 $ make build
 $ ./result/bin/bot-poc
 ```
 
-> put your bot token in the **BOT_TOKEN** environment variable
 
-#### Code Reload
+#### Code Reloading
 ```sh
 $ make dev
 ```
