@@ -1,7 +1,7 @@
 all: build
 
 dev:
-	ghcid --command "ghci Main -fobject-code" --test main
+	ghcid --command "ghci src/Main -fobject-code -i.:src" --test main
 
 build:
 	nix-build release.nix

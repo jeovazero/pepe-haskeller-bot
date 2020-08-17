@@ -16,7 +16,6 @@ extra-source-files:  CHANGELOG.md
 
 executable bot-poc
   main-is:             Main.hs
-  -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.12 && <4.13
                        , aeson
@@ -26,5 +25,5 @@ executable bot-poc
                        , xeno
                        , pretty-simple
                        , transformers
-  -- hs-source-dirs:
+  hs-source-dirs:      src
   default-language:    Haskell2010
