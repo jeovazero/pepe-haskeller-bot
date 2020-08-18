@@ -1,4 +1,4 @@
-{ nixpkgs ? import ./source.nix { json = ./source.json; }
+{ nixpkgs ? import ./nix/source.nix { json = ./nix/source.json; }
  }:
 let
   inherit (nixpkgs) pkgs;
