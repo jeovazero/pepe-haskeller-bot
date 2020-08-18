@@ -12,3 +12,5 @@ cabal2nix:
 init-cabal-nix:
 	nix-shell -p cabal2nix --run 'cabal2nix . > default.nix'
  
+docker-image:
+	nix-build docker.nix -o image
