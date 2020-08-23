@@ -17,5 +17,4 @@ docker-image:
 
 # requires login in the docker hub
 docker-image-and-push:
-	nix-build docker.nix -o image
-	docker push `docker load < image | awk '{print $$3}'`
+	sh scripts/build-push-image.sh
