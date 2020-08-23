@@ -17,4 +17,5 @@ docker-image:
 
 # requires login in the docker hub
 docker-image-and-push:
-	docker push $(docker load < (nix-build docker.nix -o image) | aws '{print $3}')
+	nix-build docker.nix -o image
+	docker push `docker load < image | awk '{print $$3}'`
