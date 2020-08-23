@@ -18,8 +18,11 @@ jobs:
           with:
             name: pepe-haskeller
             signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-        - run: |
-             make docker-image
+        - name: Docker login
+          run: echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u jeovazero --password-stdin
+        - name: Build and push image to docker hub
+          run: |
+             make docker-image-and-push
           env: 
             NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/c9d124e39dbeefc53c7b3e09fbfc2c26bcbd4845
 
