@@ -1,0 +1,37 @@
+name: Deploy bot to ec2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+    build_and_push:
+        name: Build and Push image
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v2
+        - uses: cachix/install-nix-action@v10
+          with:
+            skip_adding_nixpkgs_channel: true
+        - uses: cachix/cachix-action@v6
+          with:
+            name: pepe-haskeller
+            signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+        - name: Docker login
+          run: echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u jeovazero --password-stdin
+        - name: Build and push image to docker hub
+          run: |
+             make docker-image-and-push
+          env: 
+            NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/c9d124e39dbeefc53c7b3e09fbfc2c26bcbd4845
+        - name: Update service in EC2
+          uses: appleboy/ssh-action@master
+          with:
+            host: ${{ secrets.EC2_HOST }}
+            username: ${{ secrets.USERNAME }}
+            key: ${{ secrets.SSH_KEY }}
+            envs: TAG
+            script: |
+                docker pull $TAG
+                docker service update nano_hs_stack_bot --image $TAG

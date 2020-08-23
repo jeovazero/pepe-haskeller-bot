@@ -14,3 +14,7 @@ init-cabal-nix:
  
 docker-image:
 	nix-build docker.nix -o image
+
+# requires login in the docker hub
+docker-image-and-push:
+	sh scripts/build-push-image.sh
