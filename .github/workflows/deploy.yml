@@ -25,4 +25,13 @@ jobs:
              make docker-image-and-push
           env: 
             NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/c9d124e39dbeefc53c7b3e09fbfc2c26bcbd4845
-
+        - name: Update service in EC2
+          uses: appleboy/ssh-action@master
+          with:
+            host: ${{ secrets.EC2_HOST }}
+            username: ${{ secrets.USERNAME }}
+            key: ${{ secrets.SSH_KEY }}
+            envs: TAG
+            script: |
+                docker pull $TAG
+                docker service update nano_hs_stack_bot --image $TAG
