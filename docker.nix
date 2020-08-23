@@ -8,7 +8,7 @@ let
 in
 
 pkgs.dockerTools.buildImage {
-  name = "docker-bot-poc";
+  name = "jeovazero/pepe-haskeller";
   contents = [ pkgs.cacert ];
   created = "now";
   config = {
