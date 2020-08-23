@@ -14,6 +14,10 @@ jobs:
         - uses: cachix/install-nix-action@v10
           with:
             skip_adding_nixpkgs_channel: true
+        - uses: cachix/cachix-action@v6
+          with:
+            name: pepe-haskeller
+            signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
         - run: |
              make docker-image
           env: 
