@@ -15,4 +15,4 @@ jobs:
           with:
             skip_adding_nixpkgs_channel: true
         - run: |
-            make image
+            make docker-image
