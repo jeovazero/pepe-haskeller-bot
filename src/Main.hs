@@ -1,7 +1,4 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
@@ -9,6 +6,7 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import qualified Data.Text as T
 import Feed (haskellWeekly)
 import Network.HTTP.Req
+    ( defaultHttpConfig, responseBody, runReq, Req )
 import System.Environment (lookupEnv)
 import Telegram.Data
   ( ResponseGetUpdate (..),
@@ -25,6 +23,9 @@ import Telegram.Req (getUpdates, sendMessage)
 tokenFromEnv :: IO T.Text
 tokenFromEnv = fmap (maybe "" T.pack) $ lookupEnv "BOT_TOKEN"
 
+example :: [String]
+example = ["a", "d"]
+
 welcomeMessage :: User -> T.Text
 welcomeMessage = T.append "Boas vindas, " . first_name
 
@@ -32,10 +33,10 @@ helpMessage :: T.Text
 helpMessage = "/lastweekly - O link da última haskell weekly"
 
 sendG :: (a -> T.Text) -> Params -> a -> Req ()
-sendG genText (chat_id, token, messageId) arg =
+sendG genText (chat_id', token, messageId) arg =
   let payload =
         SendMessage
-          { chat_id = chat_id,
+          { chat_id = chat_id',
             text = genText arg,
             parse_mode = Just "",
             reply_to_message_id = messageId

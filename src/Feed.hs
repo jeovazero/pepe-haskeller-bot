@@ -8,6 +8,15 @@ where
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TEnc
 import Network.HTTP.Req
+  ( (/:),
+    GET (GET),
+    NoReqBody (NoReqBody),
+    Req,
+    bsResponse,
+    https,
+    req,
+    responseBody,
+  )
 import qualified Xeno.DOM as X
 
 text :: X.Content -> T.Text

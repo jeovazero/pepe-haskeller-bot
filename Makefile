@@ -9,6 +9,9 @@ build:
 cabal2nix:
 	cabal2nix . > default.nix
 
+format:
+	ormolu --mode inplace `find src -name '*.hs'`
+
 init-cabal-nix:
 	nix-shell -p cabal2nix --run 'cabal2nix . > default.nix'
  

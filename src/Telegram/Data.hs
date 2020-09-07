@@ -30,7 +30,8 @@ data ResponseGetUpdate
 
 instance FromJSON ResponseGetUpdate where
   parseJSON (Object obj) =
-    ResponseGetUpdate <$> obj .: "ok"
+    ResponseGetUpdate
+      <$> obj .: "ok"
       <*> obj .:? "result"
   parseJSON invalid = typeMismatch "Object" invalid
 
@@ -60,7 +61,8 @@ data Message
 
 instance FromJSON Message where
   parseJSON (Object obj) =
-    Message <$> obj .: "message_id"
+    Message
+      <$> obj .: "message_id"
       <*> obj .:? "from"
       <*> obj .: "chat"
       <*> obj .: "date"
@@ -80,7 +82,8 @@ data User
 
 instance FromJSON User where
   parseJSON (Object obj) =
-    User <$> obj .: "id"
+    User
+      <$> obj .: "id"
       <*> obj .: "is_bot"
       <*> obj .: "first_name"
       <*> obj .:? "last_name"
@@ -100,7 +103,8 @@ data Chat
 
 instance FromJSON Chat where
   parseJSON (Object obj) =
-    Chat <$> obj .: "id"
+    Chat
+      <$> obj .: "id"
       <*> obj .: "type"
       <*> obj .:? "title"
       <*> obj .:? "username"
