@@ -9,6 +9,7 @@ module Telegram.Data
     Update (..),
     Message (..),
     User (..),
+    Cmd(..),
     newChatMembersInfo,
     updatesFromResponse,
     cmdInfo,
@@ -137,10 +138,16 @@ headText :: [Text] -> Text
 headText [] = ""
 headText (x : _) = x
 
-getCmd :: Text -> Text
-getCmd = headText . split (== '@')
+data Cmd = Help | Welcome | LastWeekly | Unknown deriving (Show)
 
-cmdInfo :: Update -> (Maybe Int, Maybe Text)
+getCmd :: Text -> Cmd
+getCmd t =
+  case headText $ split (== '@') t of
+    "/lastweekly" -> LastWeekly
+    "/help" -> Help
+    _ -> Unknown
+
+cmdInfo :: Update -> (Maybe Int, Maybe Cmd)
 cmdInfo u =
   maybe
     (Nothing, Nothing)

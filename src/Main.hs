@@ -13,6 +13,7 @@ import Telegram.Data
     SendMessage (..),
     Update (..),
     User (..),
+    Cmd(..),
     chatIdInfo,
     cmdInfo,
     newChatMembersInfo,
@@ -22,9 +23,6 @@ import Telegram.Req (getUpdates, sendMessage)
 
 tokenFromEnv :: IO T.Text
 tokenFromEnv = fmap (maybe "" T.pack) $ lookupEnv "BOT_TOKEN"
-
-example :: [String]
-example = ["a", "d"]
 
 welcomeMessage :: User -> T.Text
 welcomeMessage = T.append "Boas vindas, " . first_name
@@ -48,12 +46,12 @@ type Params = (Int, T.Text, Maybe Int)
 
 data Arg = ArgUser User | ArgText T.Text
 
-send :: T.Text -> Params -> Arg -> Req ()
-send "/help" params arg = sendG (const helpMessage) params arg
-send "/lastweekly" params _ =
+send :: Cmd -> Params -> Arg -> Req ()
+send Help params arg = sendG (const helpMessage) params arg
+send LastWeekly params _ =
   haskellWeekly
     >>= sendG (T.append "A ultima weekly: " . maybe "" id) params
-send "welcome" params (ArgUser user) =
+send Welcome params (ArgUser user) =
   sendG welcomeMessage params user
 send _ _ _ = pure ()
 
@@ -62,11 +60,11 @@ respondSingleUpdate token update = do
   let newMembers = newChatMembersInfo update
   let (messageId, cmd) = cmdInfo update
   let nextOffset = pure $ update_id update
-  let cmd' = if [] == newMembers then cmd else Just "welcome"
+  let cmd' = if [] == newMembers then cmd else Just Welcome
   case (cmd', chatIdInfo update) of
-    (Just "welcome", Just chatid) -> do
+    (Just Welcome, Just chatid) -> do
       let params = (chatid, token, messageId)
-      sequence_ $ fmap (send "welcome" params . ArgUser) newMembers
+      sequence_ $ fmap (send Welcome params . ArgUser) newMembers
     (Just cmd'', Just chatid) -> do
       let params = (chatid, token, messageId)
       send cmd'' params (ArgText "")
