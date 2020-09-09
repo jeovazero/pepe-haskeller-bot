@@ -5,21 +5,25 @@
 
 module Telegram.Data
   ( ResponseGetUpdate (..),
-    SendMessage (..),
+    MessageResponse (..),
+    PhotoResponse (..),
+    InlineResponse (..),
+    InlinePhotoResponse (..),
     Update (..),
     Message (..),
     User (..),
-    Cmd(..),
+    Cmd (..),
+    Command,
     newChatMembersInfo,
     updatesFromResponse,
-    cmdInfo,
+    command,
     chatIdInfo,
   )
 where
 
 import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
-import Data.Text (Text, split)
+import Data.Text (Text, isPrefixOf, split)
 import GHC.Generics (Generic)
 
 data ResponseGetUpdate
@@ -39,14 +43,33 @@ instance FromJSON ResponseGetUpdate where
 data Update
   = Update
       { update_id :: Int,
-        message :: Maybe Message
+        message :: Maybe Message,
+        inline_query :: Maybe InlineQuery
       }
   deriving (Show)
 
 instance FromJSON Update where
   parseJSON (Object obj) =
-    Update <$> obj .: "update_id"
+    Update
+      <$> obj .: "update_id"
       <*> obj .:? "message"
+      <*> obj .:? "inline_query"
+  parseJSON invalid = typeMismatch "Object" invalid
+
+data InlineQuery
+  = InlineQuery
+      { query_id :: Text,
+        from :: Maybe User,
+        query :: Text
+      }
+  deriving (Show)
+
+instance FromJSON InlineQuery where
+  parseJSON (Object obj) =
+    InlineQuery
+      <$> obj .: "id"
+      <*> obj .:? "from"
+      <*> obj .: "query"
   parseJSON invalid = typeMismatch "Object" invalid
 
 data Message
@@ -113,8 +136,8 @@ instance FromJSON Chat where
       <*> obj .:? "last_name"
   parseJSON invalid = typeMismatch "Object" invalid
 
-data SendMessage
-  = SendMessage
+data MessageResponse
+  = MessageResponse
       { chat_id :: Int,
         text :: Text,
         parse_mode :: Maybe Text,
@@ -122,34 +145,106 @@ data SendMessage
       }
   deriving (Generic, Show)
 
-instance ToJSON SendMessage
+instance ToJSON MessageResponse
+
+data PhotoResponse
+  = PhotoResponse
+      { chat_id :: Int,
+        photo :: Text
+      }
+  deriving (Generic, Show)
+
+instance ToJSON PhotoResponse
+
+data InlineResponse
+  = InlineResponse
+      { inline_query_id :: Text,
+        results :: [InlinePhotoResponse]
+      }
+  deriving (Generic, Show)
+
+instance ToJSON InlineResponse
+
+data InlinePhotoResponse
+  = InlinePhotoResponse
+      { _type :: Text,
+        _id :: Text,
+        photo_url :: Text,
+        thumb_url :: Text,
+        title :: Maybe Text
+      }
+  deriving (Generic, Show)
+
+instance ToJSON InlinePhotoResponse where
+  toJSON InlinePhotoResponse {..} =
+    object
+      [ "type" .= _type,
+        "id" .= _id,
+        "photo_url" .= photo_url,
+        "thumb_url" .= thumb_url,
+        "title" .= title
+      ]
+  toEncoding InlinePhotoResponse {..} =
+    pairs
+      ( "type" .= _type
+          <> "id" .= _id
+          <> "photo_url" .= photo_url
+          <> "thumb_url" .= thumb_url
+          <> "title" .= title
+      )
 
 updatesFromResponse :: ResponseGetUpdate -> [Update]
 updatesFromResponse resp = maybe [] id $ result resp
 
-newChatMembersInfo :: Update -> [User]
+newChatMembersInfo :: Message -> [User]
 newChatMembersInfo =
-  maybe [] (maybe [] id . new_chat_members) . message
+  maybe [] id . new_chat_members
 
-chatIdInfo :: Update -> Maybe Int
-chatIdInfo = fmap (_chat_id . chat) . message
+chatIdInfo :: Message -> Int
+chatIdInfo = _chat_id . chat
 
 headText :: [Text] -> Text
 headText [] = ""
 headText (x : _) = x
 
-data Cmd = Help | Welcome | LastWeekly | Unknown deriving (Show)
+data Cmd
+  = Help
+  | Start
+  | About
+  | Welcome [User]
+  | LastWeekly
+  | Code Text
+  | Unknown
+  deriving (Show)
 
-getCmd :: Text -> Cmd
-getCmd t =
+type Command = (Int, Maybe Int, Cmd)
+
+getCmdFromText :: Text -> Cmd
+getCmdFromText t =
   case headText $ split (== '@') t of
     "/lastweekly" -> LastWeekly
     "/help" -> Help
-    _ -> Unknown
+    "/start" -> Start
+    "/about" -> About
+    _ ->
+      if isPrefixOf "/" t
+        then Unknown
+        else Code t
 
-cmdInfo :: Update -> (Maybe Int, Maybe Cmd)
-cmdInfo u =
-  maybe
-    (Nothing, Nothing)
-    (\m -> (Just $ message_id m, fmap getCmd $ message_text m))
-    $ message u
+empty' :: [a] -> Bool
+empty' [] = True
+empty' _ = False
+
+command :: Update -> (Int, Maybe Int, Cmd)
+command u =
+  case message u of
+    Nothing -> (0, Nothing, Unknown)
+    Just msg -> (chatIdInfo msg, Just m_id, cmd)
+      where
+        m_id = message_id msg
+        nchat = newChatMembersInfo msg
+        cmdFromText = maybe Unknown getCmdFromText $ message_text msg
+        cmd =
+          if empty' nchat
+            then cmdFromText
+            else Welcome nchat

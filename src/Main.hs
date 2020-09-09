@@ -1,91 +1,14 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Main where
 
-import Control.Monad.IO.Class (MonadIO (liftIO))
-import qualified Data.Text as T
-import Feed (haskellWeekly)
-import Network.HTTP.Req
-    ( defaultHttpConfig, responseBody, runReq, Req )
-import System.Environment (lookupEnv)
-import Telegram.Data
-  ( ResponseGetUpdate (..),
-    SendMessage (..),
-    Update (..),
-    User (..),
-    Cmd(..),
-    chatIdInfo,
-    cmdInfo,
-    newChatMembersInfo,
-    updatesFromResponse,
-  )
-import Telegram.Req (getUpdates, sendMessage)
-
-tokenFromEnv :: IO T.Text
-tokenFromEnv = fmap (maybe "" T.pack) $ lookupEnv "BOT_TOKEN"
-
-welcomeMessage :: User -> T.Text
-welcomeMessage = T.append "Boas vindas, " . first_name
-
-helpMessage :: T.Text
-helpMessage = "/lastweekly - O link da última haskell weekly"
-
-sendG :: (a -> T.Text) -> Params -> a -> Req ()
-sendG genText (chat_id', token, messageId) arg =
-  let payload =
-        SendMessage
-          { chat_id = chat_id',
-            text = genText arg,
-            parse_mode = Just "",
-            reply_to_message_id = messageId
-          }
-   in sendMessage token payload >> pure ()
-
--- (chat_id, token, messageId)
-type Params = (Int, T.Text, Maybe Int)
-
-data Arg = ArgUser User | ArgText T.Text
-
-send :: Cmd -> Params -> Arg -> Req ()
-send Help params arg = sendG (const helpMessage) params arg
-send LastWeekly params _ =
-  haskellWeekly
-    >>= sendG (T.append "A ultima weekly: " . maybe "" id) params
-send Welcome params (ArgUser user) =
-  sendG welcomeMessage params user
-send _ _ _ = pure ()
-
-respondSingleUpdate :: T.Text -> Update -> Req Int
-respondSingleUpdate token update = do
-  let newMembers = newChatMembersInfo update
-  let (messageId, cmd) = cmdInfo update
-  let nextOffset = pure $ update_id update
-  let cmd' = if [] == newMembers then cmd else Just Welcome
-  case (cmd', chatIdInfo update) of
-    (Just Welcome, Just chatid) -> do
-      let params = (chatid, token, messageId)
-      sequence_ $ fmap (send Welcome params . ArgUser) newMembers
-    (Just cmd'', Just chatid) -> do
-      let params = (chatid, token, messageId)
-      send cmd'' params (ArgText "")
-    _ -> pure ()
-  nextOffset
-
-respondUpdates :: T.Text -> Req Int -> [Update] -> Req Int
-respondUpdates token offset =
-  foldl (\_ u -> respondSingleUpdate token u) offset
-
-startBot :: Int -> Req ()
-startBot offset = runReq defaultHttpConfig $ do
-  token <- liftIO tokenFromEnv
-  responseUpdates <- getUpdates token offset
-  let updates = responseBody responseUpdates :: Maybe ResponseGetUpdate
-  let updates' = maybe [] updatesFromResponse updates
-  offset' <- respondUpdates token (pure offset) updates'
-  startBot offset'
+import Bot (startBot)
+import qualified Env
+import Network.HTTP.Req (defaultHttpConfig, runReq)
 
 initialOffset :: Int
 initialOffset = 0
 
 main :: IO ()
-main = runReq defaultHttpConfig $ startBot initialOffset
+main = do
+  putStrLn "STARTING BOT..."
+  env <- Env.getEnv
+  runReq defaultHttpConfig $ startBot env initialOffset
