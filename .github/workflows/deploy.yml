@@ -14,10 +14,14 @@ jobs:
         - uses: cachix/install-nix-action@v10
           with:
             skip_adding_nixpkgs_channel: true
-        - uses: cachix/cachix-action@v6
-          with:
-            name: pepe-haskeller
-            signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+        - name: Setup SSH Key
+          env:
+            SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          run: |
+            mkdir -p ~/.ssh
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+            ssh-add - <<< "${{ secrets.SSH_GITHUB_KEY }}"
         - name: Docker login
           run: echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u jeovazero --password-stdin
         - name: Build and push image to docker hub
@@ -25,8 +29,9 @@ jobs:
              make docker-image-and-push
           env: 
             NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/c9d124e39dbeefc53c7b3e09fbfc2c26bcbd4845
+            SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         - name: Update service in EC2
-          uses: appleboy/ssh-action@master
+          uses: appleboy/ssh-action@ffff33f8fe0318345a4f00f0e847325954b2a3ed
           with:
             host: ${{ secrets.EC2_HOST }}
             username: ${{ secrets.USERNAME }}
