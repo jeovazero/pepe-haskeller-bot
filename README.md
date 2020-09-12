@@ -3,14 +3,17 @@
 A small Telegram bot project made in Haskell
 
 <div align="center">
-    <img src="./demo.jpg" />
+    <img src="./doc/demo.jpg" />
+    <img src="./doc/code.jpg" />
 </div>
 
-### Features implemented:
+### Features:
 
 ⭐ Welcome message for new chat members (Need a better message)
 
 ⭐ `/lastweekly` command to get the link of the last haskell weekly
+
+⭐ Send a haskell code and receive a beautiful image of it.
 
 ### Scripts
 
@@ -23,7 +26,6 @@ Requirements:
 $ make build
 $ ./result/bin/bot-poc
 ```
-
 
 #### Code Reloading
 ```sh

@@ -16,7 +16,7 @@ extra-source-files:  CHANGELOG.md
 
 executable bot-poc
   main-is:             Main.hs
-  other-modules:       Feed, Telegram.Data, Telegram.Req
+  other-modules:       Feed, Telegram.Data, Telegram.Req, Bot, Env, Req
   -- other-extensions:
   build-depends:       base >=4.12 && <4.13
                        , aeson
