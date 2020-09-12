@@ -15,12 +15,7 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import qualified Env
 import Feed (haskellWeekly)
-import Network.HTTP.Req
-  ( Req,
-    defaultHttpConfig,
-    responseBody,
-    runReq,
-  )
+import Network.HTTP.Req ( responseBody)
 import System.Directory (removeFile)
 import Telegram.Data
   ( Cmd (..),
@@ -41,27 +36,35 @@ internalErroMessage =
       "https://github.com/jeovazero/pepe-haskeller-bot/issues."
     ]
 
+aboutMessage :: T.Text
+aboutMessage =
+  T.concat
+    [ "I was implemented in Haskell, check my source code:\n"
+    , "https://github.com/jeovazero/pepe-haskeller-bot"
+    ]
+
 startMessage :: T.Text
 startMessage =
   T.concat
-    [ "I'm a bot. Work in progress for new features.\n",
-      "Send me a haskell code.\n",
-      "Eg.:\n\n",
+    [ "I'm a haskeller bot. Send me a haskell code and I ",
+      "will send a beautiful image of your code.\n\n",
+      ">> Work in progress for new features ;).\n\n",
+      "Try it:\n\n",
       "main = print \"Hello Friend\""
     ]
 
 decodeCaaniError :: CaaniError -> CaaniConfig -> T.Text
 decodeCaaniError (CaaniError err) CaaniConfig {..} =
-  let (c, l) = boundary
+  let (col, lin) = boundary
    in case err of
         InvalidCode ->
           "You must send me a valid haskell code."
         BoundaryLimit ->
           T.concat
             [ "The code must have a max of ",
-              T.pack $ show c,
+              T.pack $ show col,
               " columns and ",
-              T.pack $ show l,
+              T.pack $ show lin,
               " lines."
             ]
         _ -> internalErroMessage
@@ -84,9 +87,12 @@ welcomeMessage users = T.append "Boas vindas, " usersName
     usersName = T.intercalate " e " [(T.intercalate ", " a), fromMaybe "" b]
 
 helpMessage :: T.Text
-helpMessage = "/lastweekly - O link da última haskell weekly"
+helpMessage = T.unlines [
+  "/lastweekly - The link of the last haskell weekly",
+  "/about - Information about the bot",
+  "/start - The presentation message for the PM"]
 
-sendMessageResponse :: T.Text -> Params -> Req ()
+sendMessageResponse :: T.Text -> Params -> IO ()
 sendMessageResponse _text (chat_id', env, messageId) =
   let token = Env.botToken env
       payload =
@@ -96,61 +102,67 @@ sendMessageResponse _text (chat_id', env, messageId) =
             parse_mode = Just "",
             reply_to_message_id = messageId
           }
-   in sendMessage token payload >> pure ()
+   in sendMessage token payload
 
-send :: Cmd -> Params -> Req ()
+send ::Cmd -> Params -> IO ()
 send Help params = sendMessageResponse helpMessage params
 send LastWeekly params = haskellWeekly
   >>= \hw ->
-    sendMessageResponse (T.append "A última weekly: " $ fromMaybe "" hw) params
+    sendMessageResponse (T.append "The last Haskell Weekly: " $ fromMaybe "" hw) params
 send (Welcome users) params =
   sendMessageResponse (welcomeMessage users) params
+send About params = sendMessageResponse aboutMessage params
 send Start params =
   sendMessageResponse startMessage params
 send (Code code') params@(cid, Env.BotEnv {..}, Just mid) = do
   let outimage =
         concat [T.unpack botOutputDir, "/caani-", (show cid), "-", (show mid), ".png"]
       resDir = T.unpack botResourceDir
+      -- It will create a image
       config =
         CaaniConfig
           { fontPath = resDir ++ "/FiraCode-Medium.ttf",
             tagPath = resDir ++ "/haskell-flag.png",
             code = code',
             outPath = outimage,
+            -- code with 200 columns and 1k of lines
             boundary = (200, 1000)
           }
-  result <- liftIO $ try $ caani config
+  result <- try $ caani config
   case result of
     Right () -> do
-      r <- sendPhoto botToken outimage cid
-      liftIO $ print $ responseBody r
-      -- try remove the image file
-      _ <- liftIO $ tryIO $ removeFile outimage
-      pure ()
+      either_resp <- sendPhoto botToken outimage cid
+      -- handling the sendPhoto (this request is dangerous :O)
+      case either_resp of
+        Left err -> print err >> sendMessageResponse internalErroMessage params
+        Right body -> do
+          -- print $ responseBody body
+          -- try remove the image file
+          _ <- removeFile outimage
+          pure ()
     Left err ->
       sendMessageResponse (decodeCaaniError err config) params
 send (Code _) _ = pure ()
 --  sendPhotoResponse
 send _ params = sendMessageResponse "Hey I don't understand :/" params
 
-respondSingleUpdate :: Env.BotEnv -> Update -> Req Int
+respondSingleUpdate :: Env.BotEnv -> Update -> IO Int
 respondSingleUpdate env update = do
   let (chatId, messageId, cmd) = command update
   let nextOffset = pure $ update_id update
   send cmd (chatId, env, messageId)
   nextOffset
 
-respondUpdates :: Env.BotEnv -> Req Int -> [Update] -> Req Int
+respondUpdates :: Env.BotEnv -> IO Int -> [Update] -> IO Int
 respondUpdates env offset =
   foldl (\_ u -> respondSingleUpdate env u) offset
 
--- TODO: use ReaderT pattern for Env
-startBot :: Env.BotEnv -> Int -> Req ()
-startBot env offset = runReq defaultHttpConfig $ do
+-- TODO: use ReaderT pattern for the Env
+startBot :: Env.BotEnv -> Int -> IO ()
+startBot env offset = do
   let token = Env.botToken env
   responseUpdates <- getUpdates token offset
   let updates = responseBody responseUpdates :: Maybe ResponseGetUpdate
-  liftIO $ print updates
   let updates' = maybe [] updatesFromResponse updates
   offset' <- respondUpdates env (pure offset) updates'
   startBot env offset'

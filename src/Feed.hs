@@ -11,13 +11,13 @@ import Network.HTTP.Req
   ( (/:),
     GET (GET),
     NoReqBody (NoReqBody),
-    Req,
     bsResponse,
     https,
     req,
     responseBody,
   )
 import qualified Xeno.DOM as X
+import Req (runReq')
 
 text :: X.Content -> T.Text
 text (X.Text a) = TEnc.decodeUtf8 a
@@ -39,9 +39,9 @@ safeHead :: [a] -> Maybe a
 safeHead [] = Nothing
 safeHead (x : _) = Just x
 
-haskellWeekly :: Req (Maybe T.Text)
+haskellWeekly :: IO (Maybe T.Text)
 haskellWeekly = do
-  bs <-
+  bs <- runReq' $
     req
       GET
       (https "haskellweekly.news" /: "newsletter.atom")
