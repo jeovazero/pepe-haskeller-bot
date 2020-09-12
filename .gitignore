@@ -2,3 +2,5 @@
 *.o
 image
 result/*
+result
+dist-newstyle

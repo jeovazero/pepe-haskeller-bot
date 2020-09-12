@@ -13,6 +13,7 @@ pkgs.stdenv.mkDerivation {
   buildInputs = project.env.nativeBuildInputs ++ [
     haskellPackages.cabal-install
     haskellPackages.ghcid
+    haskellPackages.ormolu
     cabal2nix
   ];
   # https://github.com/NixOS/nix/issues/599
