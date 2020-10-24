@@ -121,7 +121,7 @@ send (Code code') params@(cid, Env.BotEnv {..}, Just mid) = do
       -- It will create a image
       config =
         CaaniConfig
-          { fontPath = resDir ++ "/FiraCode-Medium.ttf",
+          { fontPath = resDir ++ "/FiraCode/FiraCode-Medium.ttf",
             tagPath = resDir ++ "/haskell-flag.png",
             code = code',
             outPath = outimage,
