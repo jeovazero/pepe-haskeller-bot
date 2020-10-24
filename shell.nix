@@ -1,10 +1,8 @@
-{ nixpkgs ? import ./nix/source.nix { json = ./nix/source.json; }
- }:
+{ nixpkgs ? import ./nix/pinnedNix.nix { } }:
 let
   inherit (nixpkgs) pkgs;
-  inherit (pkgs) haskell;
-  haskellPackages = haskell.packages.ghc865;
-  cabal2nix = pkgs.cabal2nix;
+  inherit (pkgs) haskell cabal2nix;
+  haskellPackages = haskell.packages.ghc884;
 
   project = (import ./release.nix {});
 in
