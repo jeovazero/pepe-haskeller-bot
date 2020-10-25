@@ -27,7 +27,6 @@ jobs:
         - name: Build and push image to docker hub
           run: |
              make docker-image-and-push
-             [ $? -ne 0 ] && exit 1
           env: 
             NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/7badbf18c45b7490d893452beb8950d966327831
             SSH_AUTH_SOCK: /tmp/ssh_agent.sock
