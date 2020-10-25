@@ -5,5 +5,5 @@ docker tag $TAG $LATEST
 docker push $TAG
 docker push $LATEST
 # setting an environment variable in the Github Workflow
-# https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-echo "::set-env name=TAG::$TAG"
+# https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+echo "TAG=$TAG" >> $GITHUB_ENV
