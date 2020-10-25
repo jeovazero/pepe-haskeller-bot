@@ -1,4 +1,4 @@
-{ nixpkgs ? import ./nix/source.nix { json = ./nix/source.json; } }:
+{ nixpkgs ? import ./nix/pinnedNix.nix { } }:
 nixpkgs.pkgs.stdenv.mkDerivation {
     name = "resources";
     src = ./resources;

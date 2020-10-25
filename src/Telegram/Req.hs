@@ -10,7 +10,6 @@ module Telegram.Req
   )
 where
 
-import Data.Text (Text, append)
 import Data.Text as T
 import Data.Text.Encoding as TE
 import qualified Network.HTTP.Client.MultipartFormData as LM

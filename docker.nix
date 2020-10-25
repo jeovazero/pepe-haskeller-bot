@@ -1,5 +1,4 @@
-{ nixpkgs ? import ./nix/source.nix { json = ./nix/source.json; }
- }:
+{ nixpkgs ? import ./nix/pinnedNix.nix { } }:
 let
   inherit (nixpkgs) pkgs;
 
@@ -12,8 +11,19 @@ pkgs.dockerTools.buildImage {
   name = "jeovazero/pepe-haskeller";
   contents = [ pkgs.cacert resources ];
   created = "now";
+  runAsRoot = ''
+    #!${pkgs.runtimeShell}
+    mkdir -p /output
+  '';
   config = {
     Cmd = [ "${project}/bin/bot-poc" ];
+    Env = [
+      "BOT_RESOURCE_DIR=/data" # from resources.nix
+      "BOT_OUTPUT_DIR=/output"
+    ];
+    Volumes = {
+      "/output" = {};
+    };
   };
 }
 
