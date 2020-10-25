@@ -4,7 +4,7 @@ let
   inherit (pkgs) haskell cabal2nix;
   haskellPackages = haskell.packages.ghc884;
 
-  project = (import ./release.nix {});
+  project = import ./release.nix {};
 in
 pkgs.stdenv.mkDerivation {
   name = "shell";

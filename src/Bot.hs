@@ -8,9 +8,7 @@ module Bot
 where
 
 import Caani (CaaniConfig (..), caani)
-import Caani.Error (CaaniError (..), CaaniErrorType (..), tryIO)
-import Control.Exception (try)
-import Control.Monad.IO.Class (MonadIO (liftIO))
+import Caani.Error (CaaniError (..), CaaniErrorType (..))
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import qualified Env
@@ -28,11 +26,11 @@ import Telegram.Data
   )
 import Telegram.Req (getUpdates, sendMessage, sendPhoto)
 
-internalErroMessage :: T.Text
-internalErroMessage =
+internalErrorMessage :: T.Text
+internalErrorMessage =
   T.concat
     [ "Hm :(, an internal error.\n",
-      "Please report it in ",
+      "Please, report it in ",
       "https://github.com/jeovazero/pepe-haskeller-bot/issues."
     ]
 
@@ -56,7 +54,7 @@ startMessage =
 decodeCaaniError :: CaaniError -> CaaniConfig -> T.Text
 decodeCaaniError (CaaniError err) CaaniConfig {..} =
   let (col, lin) = boundary
-   in case err of
+  in case err of
         InvalidCode ->
           "You must send me a valid haskell code."
         BoundaryLimit ->
@@ -67,7 +65,7 @@ decodeCaaniError (CaaniError err) CaaniConfig {..} =
               T.pack $ show lin,
               " lines."
             ]
-        _ -> internalErroMessage
+        _ -> internalErrorMessage
 
 splitInit :: [a] -> [a] -> ([a], Maybe a)
 splitInit _ [] = ([], Nothing)
@@ -128,19 +126,20 @@ send (Code code') params@(cid, Env.BotEnv {..}, Just mid) = do
             -- code with 200 columns and 1k of lines
             boundary = (200, 1000)
           }
-  result <- try $ caani config
+  result <- caani config
   case result of
     Right () -> do
       either_resp <- sendPhoto botToken outimage cid
       -- handling the sendPhoto (this request is dangerous :O)
       case either_resp of
-        Left err -> print err >> sendMessageResponse internalErroMessage params
-        Right body -> do
+        Left err -> print err >> sendMessageResponse internalErrorMessage params
+        Right _ -> do
           -- print $ responseBody body
           -- try remove the image file
           _ <- removeFile outimage
           pure ()
-    Left err ->
+    Left err -> do
+      putStrLn $ concat ["> ERROR :: ", show err ]
       sendMessageResponse (decodeCaaniError err config) params
 send (Code _) _ = pure ()
 --  sendPhotoResponse
@@ -149,6 +148,7 @@ send _ params = sendMessageResponse "Hey I don't understand :/" params
 respondSingleUpdate :: Env.BotEnv -> Update -> IO Int
 respondSingleUpdate env update = do
   let (chatId, messageId, cmd) = command update
+  putStrLn "> INFO :: NEW MESSAGE"
   let nextOffset = pure $ update_id update
   send cmd (chatId, env, messageId)
   nextOffset
