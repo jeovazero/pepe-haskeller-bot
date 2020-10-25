@@ -28,7 +28,7 @@ jobs:
           run: |
              make docker-image-and-push
           env: 
-            NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/c9d124e39dbeefc53c7b3e09fbfc2c26bcbd4845
+            NIX_PATH: nixpkgs=https://github.com/nixos/nixpkgs-channels/tarball/7badbf18c45b7490d893452beb8950d966327831
             SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         - name: Update service in EC2
           uses: appleboy/ssh-action@ffff33f8fe0318345a4f00f0e847325954b2a3ed
