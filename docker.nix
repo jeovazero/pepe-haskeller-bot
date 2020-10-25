@@ -1,4 +1,4 @@
-{ nixpkgs ? import ./nix/pinnedNix.nix { } }:
+{ nixpkgs ? import ./nix/pinnedNix.nix { system-features = "kvm"; } }:
 let
   inherit (nixpkgs) pkgs;
 
