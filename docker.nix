@@ -1,20 +1,19 @@
-{ nixpkgs ? import ./nix/pinnedNix.nix { system-features = "kvm"; } }:
+{ nixpkgs ? import ./nix/pinnedNix.nix {} }:
 let
-  inherit (nixpkgs) pkgs;
+  inherit (nixpkgs) pkgs runCommand;
 
   project = pkgs.haskell.lib.justStaticExecutables
               ( import ./release.nix {} );
   resources = import ./resources.nix {};
+  outputDir = runCommand "outputDir" {} ''
+    mkdir -p $out/output  
+  '';
 in
 
 pkgs.dockerTools.buildImage {
   name = "jeovazero/pepe-haskeller";
-  contents = [ pkgs.cacert resources ];
+  contents = [ pkgs.cacert resources outputDir ];
   created = "now";
-  runAsRoot = ''
-    #!${pkgs.runtimeShell}
-    mkdir -p /output
-  '';
   config = {
     Cmd = [ "${project}/bin/bot-poc" ];
     Env = [

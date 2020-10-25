@@ -14,8 +14,6 @@ jobs:
         - uses: cachix/install-nix-action@v10
           with:
             skip_adding_nixpkgs_channel: true
-            extra_nix_config: |
-              system-features = kvm
         - name: Setup SSH Key
           env:
             SSH_AUTH_SOCK: /tmp/ssh_agent.sock
