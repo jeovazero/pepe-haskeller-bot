@@ -6,10 +6,12 @@ module Telegram.Req
     sendPhoto,
     getUpdates,
     answerInlineQuery,
-    runReq'
+    runReq',
+    setWebhook
   )
 where
 
+import Data.Aeson
 import Data.Text as T
 import Data.Text.Encoding as TE
 import qualified Network.HTTP.Client.MultipartFormData as LM
@@ -32,6 +34,10 @@ urlSendPhoto token =
 urlAnswerInlineQuery :: Text -> Url'
 urlAnswerInlineQuery token =
   https "api.telegram.org" /: (append "bot" token) /: "answerInlineQuery"
+
+urlSetWebhook :: Text -> Url'
+urlSetWebhook token =
+  https "api.telegram.org" /: (append "bot" token) /: "setWebhook"
 
 sendMessage :: Text -> MessageResponse -> IO ()
 sendMessage token payload =
@@ -56,5 +62,10 @@ getUpdates token offset =
       <> responseTimeout 3601000000
 
 answerInlineQuery :: Text -> InlineResponse -> IO BsResponse
-answerInlineQuery token payload = do
+answerInlineQuery token payload =
   runReq' $ req POST (urlAnswerInlineQuery token) (ReqBodyJson payload) bsResponse mempty
+
+setWebhook :: Text -> Text -> IO BsResponse
+setWebhook token url = do
+  let payload = object [ "url" .= url ]
+  runReq' $ req POST (urlSetWebhook token) (ReqBodyJson payload) bsResponse mempty

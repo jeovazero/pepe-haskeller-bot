@@ -14,6 +14,7 @@ module Telegram.Data
     User (..),
     Cmd (..),
     Command,
+    decodeUpdate,
     newChatMembersInfo,
     updatesFromResponse,
     command,
@@ -25,6 +26,7 @@ import Data.Aeson
 import Data.Aeson.Types (typeMismatch)
 import Data.Text (Text, isPrefixOf, split)
 import GHC.Generics (Generic)
+import Data.ByteString.Lazy (ByteString)
 
 data ResponseGetUpdate
   = ResponseGetUpdate
@@ -248,3 +250,6 @@ command u =
           if empty' nchat
             then cmdFromText
             else Welcome nchat
+
+decodeUpdate :: ByteString -> Maybe Update
+decodeUpdate = decode

@@ -4,6 +4,7 @@
 
 module Bot
   ( startBot,
+    respondSingleUpdate
   )
 where
 
@@ -26,10 +27,11 @@ import Telegram.Data
   )
 import Telegram.Req (getUpdates, sendMessage, sendPhoto)
 
-internalErrorMessage :: T.Text
-internalErrorMessage =
+internalErrorMessage :: T.Text -> T.Text
+internalErrorMessage extra =
   T.concat
     [ "Hm :(, an internal error.\n",
+      extra,
       "Please, report it in ",
       "https://github.com/jeovazero/pepe-haskeller-bot/issues."
     ]
@@ -65,7 +67,9 @@ decodeCaaniError (CaaniError err) CaaniConfig {..} =
               T.pack $ show lin,
               " lines."
             ]
-        _ -> internalErrorMessage
+        UnaexpectedFontError error -> internalErrorMessage (T.pack error)
+        UnknownError error -> internalErrorMessage (T.pack error)
+        _ -> internalErrorMessage ""
 
 splitInit :: [a] -> [a] -> ([a], Maybe a)
 splitInit _ [] = ([], Nothing)
@@ -132,7 +136,7 @@ send (Code code') params@(cid, Env.BotEnv {..}, Just mid) = do
       either_resp <- sendPhoto botToken outimage cid
       -- handling the sendPhoto (this request is dangerous :O)
       case either_resp of
-        Left err -> print err >> sendMessageResponse internalErrorMessage params
+        Left err -> print err >> sendMessageResponse (internalErrorMessage "") params
         Right _ -> do
           -- print $ responseBody body
           -- try remove the image file
@@ -160,6 +164,7 @@ respondUpdates env offset =
 -- TODO: use ReaderT pattern for the Env
 startBot :: Env.BotEnv -> Int -> IO ()
 startBot env offset = do
+  putStrLn $ "Long Polling: " ++ (show offset)
   let token = Env.botToken env
   responseUpdates <- getUpdates token offset
   let updates = responseBody responseUpdates :: Maybe ResponseGetUpdate
